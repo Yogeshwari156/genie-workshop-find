@@ -7,8 +7,10 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, MapPin, Users, Star, Clock, User, Mail, Phone } from "lucide-react";
-import { Workshop } from "@/types/workshop";
+import { Workshop } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
 
 interface BookingModalProps {
   workshop: Workshop;
@@ -24,18 +26,46 @@ export const BookingModal = ({ workshop, isOpen, onClose }: BookingModalProps) =
     specialRequests: ""
   });
   const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const bookingMutation = useMutation({
+    mutationFn: async (bookingData: any) => {
+      return apiRequest('/api/bookings', {
+        method: 'POST',
+        body: JSON.stringify(bookingData),
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "🎉 Booking Confirmed!",
+        description: `Your spot in "${workshop.title}" has been reserved! Check your email for details.`,
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/workshops'] });
+      onClose();
+      setFormData({ name: "", email: "", phone: "", specialRequests: "" });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Booking Failed",
+        description: error.message || "Something went wrong. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Simulate booking
-    toast({
-      title: "🎉 Booking Confirmed!",
-      description: `Your spot in "${workshop.title}" has been reserved! Check your email for details.`,
-    });
+    const bookingData = {
+      userId: 1, // For now, we'll use a default user ID
+      workshopId: workshop.id,
+      participantName: formData.name,
+      participantEmail: formData.email,
+      participantPhone: formData.phone || null,
+      specialRequests: formData.specialRequests || null,
+    };
     
-    onClose();
-    setFormData({ name: "", email: "", phone: "", specialRequests: "" });
+    bookingMutation.mutate(bookingData);
   };
 
   return (
@@ -168,9 +198,10 @@ export const BookingModal = ({ workshop, isOpen, onClose }: BookingModalProps) =
               </Button>
               <Button
                 type="submit"
+                disabled={bookingMutation.isPending}
                 className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold transition-all duration-300"
               >
-                Confirm Booking ✨
+                {bookingMutation.isPending ? "Booking..." : "Confirm Booking ✨"}
               </Button>
             </div>
           </form>

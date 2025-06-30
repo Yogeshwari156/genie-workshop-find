@@ -1,11 +1,14 @@
 
 import { useState } from "react";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Sparkles, Star, UserPlus } from "lucide-react";
+import { useMutation } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 const Signup = () => {
   const [formData, setFormData] = useState({
@@ -14,17 +17,52 @@ const Signup = () => {
     password: "",
     confirmPassword: ""
   });
+  const [, setLocation] = useLocation();
+  const { toast } = useToast();
+
+  const signupMutation = useMutation({
+    mutationFn: async (userData: any) => {
+      return apiRequest('/api/users', {
+        method: 'POST',
+        body: JSON.stringify(userData),
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Account Created Successfully!",
+        description: "Welcome to Workshop Genie! You can now sign in with your credentials.",
+      });
+      setLocation('/login');
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Signup Failed",
+        description: error.message || "Something went wrong. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
 
   const handleSignup = (e: React.FormEvent) => {
     e.preventDefault();
     
     if (formData.password !== formData.confirmPassword) {
-      alert("Passwords don't match!");
+      toast({
+        title: "Password Mismatch",
+        description: "Passwords don't match! Please check your entries.",
+        variant: "destructive",
+      });
       return;
     }
     
-    console.log("Signup attempt:", formData);
-    // TODO: Implement actual signup logic
+    const userData = {
+      name: formData.name,
+      email: formData.email,
+      username: formData.email, // Using email as username
+      password: formData.password,
+    };
+    
+    signupMutation.mutate(userData);
   };
 
   const handleInputChange = (field: string, value: string) => {
@@ -127,10 +165,11 @@ const Signup = () => {
             
             <Button 
               type="submit" 
+              disabled={signupMutation.isPending}
               className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-medium py-2 transition-all duration-200 transform hover:scale-105"
             >
               <UserPlus className="w-4 h-4 mr-2" />
-              Create Account
+              {signupMutation.isPending ? "Creating Account..." : "Create Account"}
             </Button>
           </form>
           

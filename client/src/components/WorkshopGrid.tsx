@@ -1,11 +1,11 @@
 
-import { useState, useEffect } from "react";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, MapPin, Users, Star, Clock } from "lucide-react";
-import { Workshop, SearchFilters } from "@/types/workshop";
-import { mockWorkshops } from "@/data/mockWorkshops";
+import { SearchFilters } from "@/types/workshop";
+import { Workshop } from "@shared/schema";
+import { useQuery } from "@tanstack/react-query";
 
 interface WorkshopGridProps {
   filters: SearchFilters;
@@ -13,35 +13,45 @@ interface WorkshopGridProps {
 }
 
 export const WorkshopGrid = ({ filters, onWorkshopSelect }: WorkshopGridProps) => {
-  const [filteredWorkshops, setFilteredWorkshops] = useState<Workshop[]>(mockWorkshops);
+  const { data: workshops = [], isLoading, error } = useQuery({
+    queryKey: ['/api/workshops', filters],
+    queryFn: async () => {
+      const searchParams = new URLSearchParams();
+      
+      if (filters.category) searchParams.append('category', filters.category);
+      if (filters.location) searchParams.append('location', filters.location);
+      if (filters.priceRange[0] > 0) searchParams.append('priceMin', filters.priceRange[0].toString());
+      if (filters.priceRange[1] < 500) searchParams.append('priceMax', filters.priceRange[1].toString());
+      
+      const response = await fetch(`/api/workshops?${searchParams}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch workshops');
+      }
+      return response.json() as Promise<Workshop[]>;
+    },
+  });
 
-  useEffect(() => {
-    let filtered = mockWorkshops;
-
-    if (filters.category) {
-      filtered = filtered.filter(workshop => 
-        workshop.category.toLowerCase().includes(filters.category.toLowerCase())
-      );
-    }
-
-    if (filters.location) {
-      filtered = filtered.filter(workshop => 
-        workshop.location.toLowerCase().includes(filters.location.toLowerCase())
-      );
-    }
-
-    if (filters.date) {
-      filtered = filtered.filter(workshop => workshop.date === filters.date);
-    }
-
-    filtered = filtered.filter(workshop => 
-      workshop.price >= filters.priceRange[0] && workshop.price <= filters.priceRange[1]
+  if (isLoading) {
+    return (
+      <div className="text-center py-12">
+        <div className="text-6xl mb-4">✨</div>
+        <h3 className="text-2xl font-semibold text-gray-700 mb-2">Loading magical workshops...</h3>
+        <p className="text-gray-500">Please wait while we gather the best workshops for you!</p>
+      </div>
     );
+  }
 
-    setFilteredWorkshops(filtered);
-  }, [filters]);
+  if (error) {
+    return (
+      <div className="text-center py-12">
+        <div className="text-6xl mb-4">🔧</div>
+        <h3 className="text-2xl font-semibold text-gray-700 mb-2">Oops! Something went wrong</h3>
+        <p className="text-gray-500">We're having trouble loading workshops. Please try again later!</p>
+      </div>
+    );
+  }
 
-  if (filteredWorkshops.length === 0) {
+  if (workshops.length === 0) {
     return (
       <div className="text-center py-12">
         <div className="text-6xl mb-4">🔍</div>
@@ -57,11 +67,11 @@ export const WorkshopGrid = ({ filters, onWorkshopSelect }: WorkshopGridProps) =
         <h2 className="text-3xl font-bold text-gray-800 mb-2">
           ✨ Magical Workshops Await You! ✨
         </h2>
-        <p className="text-gray-600">Found {filteredWorkshops.length} amazing workshops just for you!</p>
+        <p className="text-gray-600">Found {workshops.length} amazing workshops just for you!</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredWorkshops.map((workshop) => (
+        {workshops.map((workshop: Workshop) => (
           <Card 
             key={workshop.id} 
             className="overflow-hidden hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 bg-white/90 backdrop-blur-sm border-0"
@@ -113,7 +123,7 @@ export const WorkshopGrid = ({ filters, onWorkshopSelect }: WorkshopGridProps) =
               </div>
               
               <div className="flex flex-wrap gap-1 mt-3">
-                {workshop.tags.slice(0, 3).map((tag) => (
+                {workshop.tags.slice(0, 3).map((tag: string) => (
                   <Badge key={tag} variant="outline" className="text-xs">
                     {tag}
                   </Badge>

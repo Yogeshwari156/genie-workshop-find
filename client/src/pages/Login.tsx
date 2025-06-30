@@ -1,20 +1,49 @@
 
 import { useState } from "react";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Sparkles, Star, LogIn } from "lucide-react";
+import { useMutation } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [, setLocation] = useLocation();
+  const { toast } = useToast();
+
+  const loginMutation = useMutation({
+    mutationFn: async (credentials: any) => {
+      return apiRequest('/api/auth/login', {
+        method: 'POST',
+        body: JSON.stringify(credentials),
+      });
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Welcome back!",
+        description: `Hello ${data.user.name}! You've successfully signed in.`,
+      });
+      setLocation('/');
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Login Failed",
+        description: error.message || "Invalid credentials. Please check your email and password.",
+        variant: "destructive",
+      });
+    },
+  });
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Login attempt:", { email, password });
-    // TODO: Implement actual login logic
+    
+    const credentials = { email, password };
+    loginMutation.mutate(credentials);
   };
 
   return (
@@ -87,10 +116,11 @@ const Login = () => {
             
             <Button 
               type="submit" 
+              disabled={loginMutation.isPending}
               className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-medium py-2 transition-all duration-200 transform hover:scale-105"
             >
               <LogIn className="w-4 h-4 mr-2" />
-              Sign In
+              {loginMutation.isPending ? "Signing In..." : "Sign In"}
             </Button>
           </form>
           

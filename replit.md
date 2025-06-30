@@ -103,8 +103,37 @@ Workshop Genie is a modern full-stack web application for discovering and bookin
 - Automatic Neon database provisioning support
 - Development/production mode switching via `NODE_ENV`
 
+## Recent Changes
+- June 30, 2025: Successfully migrated from Lovable to Replit
+- June 30, 2025: Updated routing from React Router to Wouter for Replit compatibility  
+- June 30, 2025: Created comprehensive backend API with workshops, bookings, and authentication
+- June 30, 2025: Connected all frontend components to backend API using React Query
+- June 30, 2025: Added sample workshop data and full CRUD operations
+
+## Backend API Endpoints
+
+### Workshop Management
+- `GET /api/workshops` - Fetch all workshops with optional filtering
+- `GET /api/workshops/:id` - Fetch specific workshop details
+- Workshop filtering supports: category, location, priceMin, priceMax
+
+### Booking System  
+- `POST /api/bookings` - Create new workshop booking
+- `GET /api/bookings/:id` - Get booking details
+- `GET /api/users/:userId/bookings` - Get user's bookings
+- `GET /api/workshops/:workshopId/bookings` - Get workshop bookings
+
+### User Authentication
+- `POST /api/users` - User registration
+- `POST /api/auth/login` - User authentication
+- `GET /api/users/:id` - Get user profile
+
+### System Health
+- `GET /api/health` - API health check
+
 ## Changelog
 - June 30, 2025. Initial setup
+- June 30, 2025. Migration to Replit completed with full backend API
 
 ## User Preferences
 Preferred communication style: Simple, everyday language.
