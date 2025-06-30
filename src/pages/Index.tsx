@@ -12,7 +12,7 @@ const Index = () => {
     category: "",
     location: "",
     date: "",
-    priceRange: [0, 500]
+    priceRange: [0, 500] as [number, number]
   });
 
   return (
