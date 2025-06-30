@@ -8,6 +8,7 @@ import { queryClient } from "@/lib/queryClient";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
+import Feedback from "./pages/Feedback";
 import NotFound from "./pages/NotFound";
 
 const App = () => (
@@ -20,6 +21,7 @@ const App = () => (
           <Route path="/" component={Index} />
           <Route path="/login" component={Login} />
           <Route path="/signup" component={Signup} />
+          <Route path="/feedback" component={Feedback} />
           <Route component={NotFound} />
         </Switch>
       </Router>
